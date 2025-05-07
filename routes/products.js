@@ -14,6 +14,8 @@ router.get('/featured', catchAsync(productController.getFeaturedProducts));
 router.get('/new-arrivals', catchAsync(productController.getNewArrivals));
 router.get('/on-sale', catchAsync(productController.getProductsOnSale));
 router.get('/category/:categoryId', catchAsync(productController.getProductsByCategory));
+router.get('/top-selling', catchAsync(productController.getTopSellingProducts));
+router.get('/best-sellers', catchAsync(productController.getTopSellingProducts));
 
 /**
  * @swagger
@@ -126,8 +128,6 @@ router.get('/brands', catchAsync(productController.getProductBrands));
 
 router.get('/:id/similar', catchAsync(productController.getSimilarProducts));
 router.get('/:id', catchAsync(productController.getProduct));
-router.get('/top-selling', catchAsync(productController.getTopSellingProducts));
-router.get('/best-sellers', catchAsync(productController.getTopSellingProducts));
 
 // ==================== ADMIN PRODUCT ROUTES ====================
 

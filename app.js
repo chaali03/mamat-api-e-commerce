@@ -31,6 +31,11 @@ const nodemailer = require('nodemailer');
 const xss = require('xss');
 const socketio = require('socket.io');
 const sanitize = require('mongo-sanitize');
+const chalk = require('chalk'); // Tambahkan import chalk di sini
+const figlet = require('figlet');
+const gradient = require('gradient-string');
+const ora = require('ora');
+const boxen = require('boxen');
 const EventEmitter = require('events');
 EventEmitter.defaultMaxListeners = 15; // Atur ke nilai yang lebih tinggi dari 10
 
@@ -554,23 +559,6 @@ const searchRoutes = require('./routes/search');
 const compareRouter = require('./routes/compare');
 const socialRouter = require('./routes/social');
 const couponRouter = require('./routes/coupon');
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/wishlist', wishlistRouter);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/address', addressRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/returns', returnRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/compare', compareRouter);
-app.use('/api/social', socialRouter);
-app.use('/api/v1/coupons', couponRouter);
 
 /*========================================
   START SERVER
@@ -578,11 +566,11 @@ app.use('/api/v1/coupons', couponRouter);
 const PORT = process.env.PORT || 5000;
 
 // Tambahkan impor paket animasi
-const figlet = require('figlet');
-const gradient = require('gradient-string');
-const ora = require('ora');
-const chalk = require('chalk');
-const boxen = require('boxen');
+// const figlet = require('figlet');
+// const gradient = require('gradient-string');
+// const ora = require('ora');
+// const chalk = require('chalk');
+// const boxen = require('boxen');
 
 // Function untuk animasi loading - pastikan ini didefinisikan sebelum digunakan
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -592,9 +580,9 @@ const startServer = async () => {
   try {
     console.clear();
     
-    // Tampilkan ASCII art dengan animasi - ubah dari ADASHOOP menjadi MAMAT
+    // Tampilkan ASCII art dengan animasi
     console.log('\n');
-    const text = figlet.textSync('MAMAT API', {
+    const text = figlet.textSync('ADASHOOP API', {
       font: 'ANSI Shadow',
       horizontalLayout: 'default',
       verticalLayout: 'default',
@@ -625,7 +613,7 @@ const startServer = async () => {
     
     // Tampilkan spinner saat memulai server
     const serverSpinner = ora({
-      text: 'Memulai server MAMAT-API...', // Ubah dari Adashoop menjadi MAMAT
+      text: 'Memulai server Adashoop-API...',
       spinner: 'bouncingBar',
       color: 'cyan'
     }).start();
@@ -636,8 +624,12 @@ const startServer = async () => {
       
       // Tampilkan informasi server dalam box
       console.log('\n');
+      // Hapus baris ini karena boxen sudah diimpor di bagian atas file
+      // const boxen = require('boxen');
+      
+      // When using boxen, make sure it's used as a function
       const serverInfo = boxen(
-        `${chalk.bold('🚀 MAMAT API RUNNING')}\n\n` + // Ubah dari ADASHOOP menjadi MAMAT
+        `${chalk.bold('🚀 ADASHOOP API RUNNING')}\n\n` +
         `${chalk.cyan('✅ Mode:')} ${chalk.green(process.env.NODE_ENV || 'development')}\n` +
         `${chalk.cyan('✅ Port:')} ${chalk.green(PORT)}\n` +
         `${chalk.cyan('✅ Database:')} ${chalk.green('Connected')}\n` +
