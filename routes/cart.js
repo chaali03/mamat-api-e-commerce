@@ -1,117 +1,64 @@
 const express = require('express');
 const router = express.Router();
-const cartController = require('../controllers/cartController');
-const { protect } = require('../controllers/authController');
+const Cart = require('../models/Cart');
 
-// Semua rute keranjang belanja memerlukan autentikasi
-router.use(protect);
+// Get cart
+router.get('/', async (req, res) => {
+  try {
+    const cart = await Cart.findOne({ user: req.user.id })
+      .populate('items.product');
 
-/**
- * @swagger
- * /cart:
- *   get:
- *     summary: Mendapatkan keranjang belanja pengguna
- *     tags: [Cart]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Berhasil mendapatkan keranjang belanja
- */
-router.get('/', cartController.getCart);
+    res.status(200).json({
+      status: 'success',
+      data: {
+        cart
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
 
-/**
- * @swagger
- * /cart/items:
- *   post:
- *     summary: Menambahkan item ke keranjang
- *     tags: [Cart]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - productId
- *             properties:
- *               productId:
- *                 type: string
- *               quantity:
- *                 type: number
- *                 default: 1
- *     responses:
- *       200:
- *         description: Item berhasil ditambahkan ke keranjang
- */
-router.post('/items', cartController.addItem);
+// Add to cart
+router.post('/', async (req, res) => {
+  try {
+    const { productId, quantity } = req.body;
+    
+    let cart = await Cart.findOne({ user: req.user.id });
+    
+    if (!cart) {
+      cart = await Cart.create({
+        user: req.user.id,
+        items: [{ product: productId, quantity }]
+      });
+    } else {
+      const itemIndex = cart.items.findIndex(item => 
+        item.product.toString() === productId
+      );
 
-/**
- * @swagger
- * /cart/items/{itemId}:
- *   patch:
- *     summary: Mengupdate jumlah item di keranjang
- *     tags: [Cart]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: itemId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - quantity
- *             properties:
- *               quantity:
- *                 type: number
- *                 minimum: 1
- *     responses:
- *       200:
- *         description: Item berhasil diupdate
- */
-router.patch('/items/:itemId', cartController.updateItem);
+      if (itemIndex > -1) {
+        cart.items[itemIndex].quantity += quantity;
+      } else {
+        cart.items.push({ product: productId, quantity });
+      }
+      await cart.save();
+    }
 
-/**
- * @swagger
- * /cart/items/{itemId}:
- *   delete:
- *     summary: Menghapus item dari keranjang
- *     tags: [Cart]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: itemId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Item berhasil dihapus dari keranjang
- */
-router.delete('/items/:itemId', cartController.removeItem);
-
-/**
- * @swagger
- * /cart:
- *   delete:
- *     summary: Mengosongkan keranjang
- *     tags: [Cart]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Keranjang berhasil dikosongkan
- */
-router.delete('/', cartController.clearCart);
+    res.status(200).json({
+      status: 'success',
+      data: {
+        cart
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
 
 module.exports = router;

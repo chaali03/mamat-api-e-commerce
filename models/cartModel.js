@@ -53,6 +53,5 @@ cartSchema.pre('save', function(next) {
   next();
 });
 
-const Cart = mongoose.model('Cart', cartSchema);
-
-module.exports = Cart;
+// Fix: Use cartSchema instead of CartSchema
+module.exports = mongoose.models.Cart || mongoose.model('Cart', cartSchema);

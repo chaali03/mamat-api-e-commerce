@@ -582,16 +582,19 @@ const figlet = require('figlet');
 const gradient = require('gradient-string');
 const ora = require('ora');
 const chalk = require('chalk');
-// ... existing code ...
+const boxen = require('boxen');
+
+// Function untuk animasi loading - pastikan ini didefinisikan sebelum digunakan
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Function to start the server
-const startServer = async () => {  // Tambahkan keyword async di sini
+const startServer = async () => {
   try {
     console.clear();
     
-    // Tampilkan ASCII art dengan animasi
+    // Tampilkan ASCII art dengan animasi - ubah dari ADASHOOP menjadi MAMAT
     console.log('\n');
-    const text = figlet.textSync('ADASHOOP API', {
+    const text = figlet.textSync('MAMAT API', {
       font: 'ANSI Shadow',
       horizontalLayout: 'default',
       verticalLayout: 'default',
@@ -622,7 +625,7 @@ const startServer = async () => {  // Tambahkan keyword async di sini
     
     // Tampilkan spinner saat memulai server
     const serverSpinner = ora({
-      text: 'Memulai server Adashoop-API...',
+      text: 'Memulai server MAMAT-API...', // Ubah dari Adashoop menjadi MAMAT
       spinner: 'bouncingBar',
       color: 'cyan'
     }).start();
@@ -633,12 +636,8 @@ const startServer = async () => {  // Tambahkan keyword async di sini
       
       // Tampilkan informasi server dalam box
       console.log('\n');
-      // Make sure the import is correct
-      const boxen = require('boxen');
-      
-      // When using boxen, make sure it's used as a function
       const serverInfo = boxen(
-        `${chalk.bold('🚀 ADASHOOP API RUNNING')}\n\n` +
+        `${chalk.bold('🚀 MAMAT API RUNNING')}\n\n` + // Ubah dari ADASHOOP menjadi MAMAT
         `${chalk.cyan('✅ Mode:')} ${chalk.green(process.env.NODE_ENV || 'development')}\n` +
         `${chalk.cyan('✅ Port:')} ${chalk.green(PORT)}\n` +
         `${chalk.cyan('✅ Database:')} ${chalk.green('Connected')}\n` +
