@@ -1,0 +1,2 @@
+503c5ba6-d124-42ba-ab37-f83c6f1bd28e ::1 - - [07/May/2025:15:28:49 +0000] "GET /api/products HTTP/1.1" 404 151 "-" "PostmanRuntime/7.43.4" 7.550 ms -
+449c52f2-d293-43e5-b28f-1968440bef6b ::1 - - [07/May/2025:15:28:59 +0000] "GET /api/products HTTP/1.1" 404 151 "-" "PostmanRuntime/7.43.4" 1.192 ms -

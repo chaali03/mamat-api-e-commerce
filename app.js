@@ -565,13 +565,6 @@ const couponRouter = require('./routes/coupon');
 ========================================*/
 const PORT = process.env.PORT || 5000;
 
-// Tambahkan impor paket animasi
-// const figlet = require('figlet');
-// const gradient = require('gradient-string');
-// const ora = require('ora');
-// const chalk = require('chalk');
-// const boxen = require('boxen');
-
 // Function untuk animasi loading - pastikan ini didefinisikan sebelum digunakan
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -582,7 +575,7 @@ const startServer = async () => {
     
     // Tampilkan ASCII art dengan animasi
     console.log('\n');
-    const text = figlet.textSync('ADASHOOP API', {
+    const text = figlet.textSync('MAMAT API', {
       font: 'ANSI Shadow',
       horizontalLayout: 'default',
       verticalLayout: 'default',
@@ -613,7 +606,7 @@ const startServer = async () => {
     
     // Tampilkan spinner saat memulai server
     const serverSpinner = ora({
-      text: 'Memulai server Adashoop-API...',
+      text: 'Memulai server Mamat-API...',
       spinner: 'bouncingBar',
       color: 'cyan'
     }).start();
@@ -629,7 +622,7 @@ const startServer = async () => {
       
       // When using boxen, make sure it's used as a function
       const serverInfo = boxen(
-        `${chalk.bold('🚀 ADASHOOP API RUNNING')}\n\n` +
+        `${chalk.bold('🚀 MAMAT API RUNNING')}\n\n` +
         `${chalk.cyan('✅ Mode:')} ${chalk.green(process.env.NODE_ENV || 'development')}\n` +
         `${chalk.cyan('✅ Port:')} ${chalk.green(PORT)}\n` +
         `${chalk.cyan('✅ Database:')} ${chalk.green('Connected')}\n` +
@@ -659,7 +652,47 @@ const startServer = async () => {
       // Hentikan animasi loading setelah beberapa detik
       setTimeout(() => {
         clearInterval(loadingInterval);
-        process.stdout.write('\r  ' + chalk.green('✅ API siap menerima permintaan!') + ' '.repeat(30) + '\n\n');
+        process.stdout.write('\n\n');
+        
+        // Tambahkan animasi baru - Countdown
+        console.log(chalk.yellow('  Memulai countdown untuk optimasi performa...'));
+        let count = 5;
+        const countdownInterval = setInterval(() => {
+          process.stdout.write(`\r  ${chalk.magenta('⏱')} ${chalk.white.bold(count)}`);
+          count--;
+          if (count < 0) {
+            clearInterval(countdownInterval);
+            process.stdout.write('\n');
+            console.log(chalk.green.bold('  ✅ Optimasi performa selesai!'));
+            
+            // Tambahkan animasi baru - Typing effect
+            const message = '  🔥 MAMAT API siap melayani permintaan Anda dengan kecepatan tinggi!';
+            let charIndex = 0;
+            const typingInterval = setInterval(() => {
+              process.stdout.write(chalk.cyan(message.charAt(charIndex)));
+              charIndex++;
+              if (charIndex >= message.length) {
+                clearInterval(typingInterval);
+                console.log('\n');
+                
+                // Tambahkan animasi baru - Pulse effect
+                let pulse = 0;
+                const pulseInterval = setInterval(() => {
+                  const intensity = Math.sin(pulse) * 0.5 + 0.5;
+                  const colorGradient = gradient(['#00ffff', '#ff00ff']);
+                  const message = '❤️ Server berjalan dengan baik - Monitoring aktif';
+                  process.stdout.write(`\r  ${colorGradient(message)}`);
+                  pulse += 0.1;
+                  if (pulse >= 10) {
+                    clearInterval(pulseInterval);
+                    console.log('\n\n');
+                    console.log(chalk.green.bold('  🎉 Semua sistem berjalan normal! Selamat bekerja!'));
+                  }
+                }, 100);
+              }
+            }, 50);
+          }
+        }, 1000);
       }, 3000);
     });
   } catch (err) {
