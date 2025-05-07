@@ -582,14 +582,10 @@ const figlet = require('figlet');
 const gradient = require('gradient-string');
 const ora = require('ora');
 const chalk = require('chalk');
-const boxen = require('boxen');
-const terminalLink = require('terminal-link');
-
-// Function untuk animasi loading
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+// ... existing code ...
 
 // Function to start the server
-const startServer = async () => {
+const startServer = async () => {  // Tambahkan keyword async di sini
   try {
     console.clear();
     
@@ -604,13 +600,10 @@ const startServer = async () => {
     });
     
     // Animasi teks dengan gradien warna
-    const colors = ['#ff5e62', '#ff9966', '#ffcc33', '#00b09b', '#96c93d'];
-    let colorIndex = 0;
-    
+    const rainbowGradient = gradient(['cyan', 'pink', 'yellow']);
     for (const line of text.split('\n')) {
       await sleep(100);
-      console.log(gradient(colors[colorIndex % colors.length], colors[(colorIndex + 1) % colors.length])(line));
-      colorIndex++;
+      console.log(rainbowGradient(line));
     }
     
     console.log('\n');
@@ -640,13 +633,17 @@ const startServer = async () => {
       
       // Tampilkan informasi server dalam box
       console.log('\n');
+      // Make sure the import is correct
+      const boxen = require('boxen');
+      
+      // When using boxen, make sure it's used as a function
       const serverInfo = boxen(
         `${chalk.bold('🚀 ADASHOOP API RUNNING')}\n\n` +
         `${chalk.cyan('✅ Mode:')} ${chalk.green(process.env.NODE_ENV || 'development')}\n` +
         `${chalk.cyan('✅ Port:')} ${chalk.green(PORT)}\n` +
         `${chalk.cyan('✅ Database:')} ${chalk.green('Connected')}\n` +
         `${chalk.cyan('✅ Redis:')} ${chalk.green(process.env.REDIS_ENABLED === 'true' ? 'Enabled' : 'Disabled')}\n` +
-        `${chalk.cyan('✅ API Docs:')} ${chalk.green(terminalLink('Swagger UI', `http://localhost:${PORT}/api-docs`))}\n\n` +
+        `${chalk.cyan('✅ API Docs:')} ${chalk.green(`http://localhost:${PORT}/api-docs`)}\n\n` +
         `${chalk.yellow('Press')} ${chalk.bold('Ctrl+C')} ${chalk.yellow('to stop server')}`,
         {
           padding: 1,
@@ -674,7 +671,6 @@ const startServer = async () => {
         process.stdout.write('\r  ' + chalk.green('✅ API siap menerima permintaan!') + ' '.repeat(30) + '\n\n');
       }, 3000);
     });
-    
   } catch (err) {
     console.error(chalk.red('❌ Error saat memulai server:'), err);
     process.exit(1);
