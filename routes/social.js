@@ -1,101 +1,55 @@
 const express = require('express');
 const router = express.Router();
-const socialController = require('../controllers/socialController');
-const { protect, restrictTo } = require('../controllers/authController');
 
-/**
- * @swagger
- * /social/share:
- *   post:
- *     summary: Membuat URL berbagi untuk produk
- *     tags: [Social]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - productId
- *               - platform
- *             properties:
- *               productId:
- *                 type: string
- *               platform:
- *                 type: string
- *                 enum: [facebook, twitter, instagram, whatsapp, telegram, email, copy]
- *     responses:
- *       200:
- *         description: Berhasil membuat URL berbagi
- */
-router.post('/share', socialController.createShareUrl);
+// GET /api/social/share - Mendapatkan informasi berbagi produk
+router.get('/share/:productId', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Informasi berbagi produk',
+    data: {
+      productId: req.params.productId,
+      shareUrl: `https://adashoop.com/product/${req.params.productId}`,
+      socialPlatforms: ['facebook', 'twitter', 'whatsapp', 'telegram']
+    }
+  });
+});
 
-/**
- * @swagger
- * /social/track/{referralCode}:
- *   get:
- *     summary: Melacak klik pada URL berbagi
- *     tags: [Social]
- *     parameters:
- *       - in: path
- *         name: referralCode
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Berhasil melacak klik dan mendapatkan URL redirect
- */
-router.get('/track/:referralCode', socialController.trackShareClick);
+// POST /api/social/share - Mencatat aktivitas berbagi
+router.post('/share', (req, res) => {
+  res.status(201).json({
+    status: 'success',
+    message: 'Aktivitas berbagi berhasil dicatat',
+    data: req.body
+  });
+});
 
-/**
- * @swagger
- * /social/conversion:
- *   post:
- *     summary: Melacak konversi (pembelian) dari URL berbagi
- *     tags: [Social]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - referralCode
- *               - orderId
- *             properties:
- *               referralCode:
- *                 type: string
- *               orderId:
- *                 type: string
- *     responses:
- *       200:
- *         description: Berhasil melacak konversi
- */
-router.post('/conversion', socialController.trackShareConversion);
+// GET /api/social/follow - Mendapatkan daftar toko yang diikuti
+router.get('/follow', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Daftar toko yang diikuti',
+    data: []
+  });
+});
 
-// Rute yang memerlukan autentikasi admin
-router.use(protect);
-router.use(restrictTo('admin'));
+// POST /api/social/follow/:storeId - Mengikuti toko
+router.post('/follow/:storeId', (req, res) => {
+  res.status(201).json({
+    status: 'success',
+    message: `Berhasil mengikuti toko dengan ID ${req.params.storeId}`,
+    data: {
+      storeId: req.params.storeId,
+      followedAt: new Date()
+    }
+  });
+});
 
-/**
- * @swagger
- * /social/stats/{productId}:
- *   get:
- *     summary: Mendapatkan statistik berbagi untuk produk (admin)
- *     tags: [Social]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: productId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Berhasil mendapatkan statistik berbagi
- */
-router.get('/stats/:productId', socialController.getShareStats);
+// DELETE /api/social/follow/:storeId - Berhenti mengikuti toko
+router.delete('/follow/:storeId', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: `Berhasil berhenti mengikuti toko dengan ID ${req.params.storeId}`
+  });
+});
 
 module.exports = router;

@@ -552,8 +552,7 @@ const userRoutes = require('./routes/users');
 const categoryRoutes = require('./routes/categories');
 const searchRoutes = require('./routes/search');
 const compareRouter = require('./routes/compare');
-
-// Use routes
+const socialRouter = require('./routes/social');
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
