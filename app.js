@@ -551,6 +551,7 @@ const returnRoutes = require('./routes/returns');
 const userRoutes = require('./routes/users');
 const categoryRoutes = require('./routes/categories');
 const searchRoutes = require('./routes/search');
+const compareRouter = require('./routes/compare');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -567,138 +568,6 @@ app.use('/api/returns', returnRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/search', searchRoutes);
-
-/*========================================
-  ERROR HANDLING MIDDLEWARE
-========================================*/
-app.use((err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Terjadi kesalahan pada server';
-  
-  logger.error(`Error ${statusCode}: ${message}`);
-  if (err.stack) {
-    logger.error(err.stack);
-  }
-  
-  res.locals.errorMessage = message;
-  
-  res.status(statusCode).json({
-    status: 'error',
-    message,
-    requestId: req.requestId,
-    ...(process.env.NODE_ENV === 'development' ? { stack: err.stack } : {})
-  });
-});
-
-// 404 Handler
-app.use((req, res) => {
-  res.status(404).json({
-    status: 'error',
-    message: `Route ${req.originalUrl} tidak ditemukan`,
-    requestId: req.requestId
-  });
-});
-
-/*========================================
-  GRACEFUL SHUTDOWN
-========================================*/
-const gracefulShutdown = async (signal) => {
-  logger.info(`${signal} diterima. Memulai graceful shutdown...`);
-  
-  server.close(() => {
-    logger.info('HTTP server ditutup.');
-    
-    mongoose.connection.close(false)
-      .then(() => {
-        logger.info('MongoDB connection ditutup.');
-        
-        if (process.env.REDIS_ENABLED === 'true' && redisClient.status === 'ready') {
-          return redisClient.quit();
-        }
-      })
-      .then(() => {
-        if (process.env.REDIS_ENABLED === 'true') {
-          logger.info('Redis connection ditutup.');
-        }
-        logger.info('Proses shutdown selesai.');
-        process.exit(0);
-      })
-      .catch(err => {
-        logger.error(`Error selama shutdown: ${err.message}`);
-        process.exit(1);
-      });
-  });
-  
-  setTimeout(() => {
-    logger.error('Tidak dapat menutup koneksi dengan baik, memaksa keluar...');
-    process.exit(1);
-  }, 10000);
-};
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-/*========================================
-  START SERVER
-========================================*/
-const PORT = process.env.PORT || 5000;
-
-// Tambahkan impor paket animasi
-const figlet = require('figlet');
-const ora = require('ora');
-const gradient = require('gradient-string');
-
-// Function to start the server
-const startServer = async () => {
-  try {
-    // Tampilkan spinner saat menghubungkan ke database
-    const dbSpinner = ora('Menghubungkan ke MongoDB...').start();
-    
-    await connectWithRetry(); // Gunakan fungsi yang sudah ada
-    
-    dbSpinner.succeed('MongoDB terhubung dengan sukses!');
-    
-    // Tampilkan spinner saat memulai server
-    const serverSpinner = ora('Memulai server Mamat-API...').start();
-    
-    server.listen(PORT, () => {
-      serverSpinner.succeed(`Server berjalan pada port ${PORT}`);
-      
-      // Tampilkan ASCII art dengan gradien warna
-      console.log('\n');
-      console.log(
-        gradient.pastel.multiline(
-          figlet.textSync('MAMAT-API', {
-            font: 'Standard',
-            horizontalLayout: 'default',
-            verticalLayout: 'default',
-            width: 80,
-            whitespaceBreak: true
-          })
-        )
-      );
-      
-      console.log('\n');
-      console.log('\x1b[36m=== Informasi Server ===\x1b[0m');
-      console.log('\x1b[32m✅ Mode: ' + (process.env.NODE_ENV || 'development') + '\x1b[0m');
-      console.log('\x1b[32m✅ URL: http://localhost:' + PORT + '\x1b[0m');
-      console.log('\x1b[32m✅ Swagger UI: http://localhost:' + PORT + '/api-docs\x1b[0m');
-      console.log('\x1b[32m✅ Versi API: v1\x1b[0m');
-      console.log('\x1b[36m=======================\x1b[0m');
-      console.log('\n');
-      console.log('\x1b[33mTekan CTRL+C untuk menghentikan server\x1b[0m');
-      console.log('\n');
-    });
-  } catch (err) {
-    console.error('\x1b[31m❌ Error saat memulai server:\x1b[0m', err);
-    process.exit(1);
-  }
-};
-
-// Panggil fungsi startServer untuk memulai server
-startServer();
-
-// Routes
 app.use('/api/compare', compareRouter);
 app.use('/api/social', socialRouter);
 app.use('/api/v1/coupons', couponRouter);
