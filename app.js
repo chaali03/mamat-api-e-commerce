@@ -462,103 +462,50 @@ const authenticate = async (req, res, next) => {
 };
 
 /*========================================
-  ROUTE DEFINITIONS
+  IMPORT ROUTES
 ========================================*/
-// Health Check
-app.get('/api/health', async (req, res) => {
-  const checks = {
-    database: mongoose.connection.readyState === 1,
-    redis: process.env.REDIS_ENABLED === 'true' ? redisClient.status === 'ready' : 'disabled',
-    memoryUsage: process.memoryUsage(),
-    uptime: process.uptime(),
-    loadAvg: os.loadavg(),
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || 'development'
-  };
+const productRoutes = require('./routes/products');
+// Register routes
+// Nonaktifkan sementara rute yang belum ada
+// app.use('/api/auth', authRoutes);
+// app.use('/api/products', productRoutes);
+// app.use('/api/cart', cartRoutes);
+// app.use('/api/orders', orderRoutes);
+// app.use('/api/reviews', reviewRoutes);
+// app.use('/api/wishlist', wishlistRouter);
+// app.use('/api/payments', paymentRoutes);
+// app.use('/api/address', addressRoutes);
+// app.use('/api/profile', profileRoutes);
+// app.use('/api/notifications', notificationRoutes);
+// app.use('/api/returns', returnRoutes);
+// app.use('/api/users', userRoutes);
+// app.use('/api/categories', categoryRoutes);
+// app.use('/api/search', searchRoutes);
+// app.use('/api/compare', compareRouter);
+// app.use('/api/social', socialRouter);
+// app.use('/api/coupon', couponRouter);
 
-  const status = checks.database ? 'healthy' : 'degraded';
-  res.status(status === 'healthy' ? 200 : 503).json({
-    status,
-    ...checks
-  });
-});
-
-// Sample Data Route
-app.get('/api/data', async (req, res, next) => {
-  try {
-    let cachedData = null;
-    if (process.env.REDIS_ENABLED === 'true' && redisClient.status === 'ready') {
-      try {
-        cachedData = await redisClient.get('cached-data');
-      } catch (redisErr) {
-        logger.warn(`Redis get error: ${redisErr.message}`);
-      }
-    }
-    
-    if (cachedData) {
-      return res.json({
-        status: 'success',
-        data: JSON.parse(cachedData),
-        source: 'cache',
-        requestId: req.requestId
-      });
-    }
-
-    const dataFromDB = await new Promise(resolve => 
-      setTimeout(() => resolve({ items: Array(100).fill().map((_, i) => ({ id: i, value: Math.random() })) }), 500)
-    );
-
-    if (process.env.REDIS_ENABLED === 'true' && redisClient.status === 'ready') {
-      try {
-        await redisClient.setex('cached-data', 3600, JSON.stringify(dataFromDB));
-      } catch (redisErr) {
-        logger.warn(`Redis set error: ${redisErr.message}`);
-      }
-    }
-
-    res.json({
-      status: 'success',
-      data: dataFromDB,
-      source: 'database',
-      requestId: req.requestId
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Protected Route Example
-app.get('/api/profile', authenticate, (req, res) => {
+// Tambahkan rute default untuk testing
+app.get('/api/products', (req, res) => {
   res.json({
     status: 'success',
-    data: {
-      user: req.user,
-    },
-    requestId: req.requestId
+    message: 'Produk API berhasil diakses',
+    data: [
+      { id: 1, name: 'Produk 1', price: 100000 },
+      { id: 2, name: 'Produk 2', price: 200000 },
+      { id: 3, name: 'Produk 3', price: 300000 }
+    ]
   });
 });
 
-/*========================================
-  IMPORT ROUTES FROM SEPARATE FILES
-========================================*/
-// Import routes
-const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
-const cartRoutes = require('./routes/cart');
-const orderRoutes = require('./routes/orders');
-const reviewRoutes = require('./routes/reviews');
-const wishlistRouter = require('./routes/wishlist');
-const paymentRoutes = require('./routes/payments');
-const addressRoutes = require('./routes/address');
-const profileRoutes = require('./routes/profile');
-const notificationRoutes = require('./routes/notifications');
-const returnRoutes = require('./routes/returns');
-const userRoutes = require('./routes/users');
-const categoryRoutes = require('./routes/categories');
-const searchRoutes = require('./routes/search');
-const compareRouter = require('./routes/compare');
-const socialRouter = require('./routes/social');
-const couponRouter = require('./routes/coupon');
+// Tambahkan rute default untuk testing
+app.get('/api/auth/status', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'Auth API berhasil diakses',
+    isLoggedIn: false
+  });
+});
 
 /*========================================
   START SERVER
@@ -617,10 +564,7 @@ const startServer = async () => {
       
       // Tampilkan informasi server dalam box
       console.log('\n');
-      // Hapus baris ini karena boxen sudah diimpor di bagian atas file
-      // const boxen = require('boxen');
       
-      // When using boxen, make sure it's used as a function
       const serverInfo = boxen(
         `${chalk.bold('🚀 MAMAT API RUNNING')}\n\n` +
         `${chalk.cyan('✅ Mode:')} ${chalk.green(process.env.NODE_ENV || 'development')}\n` +
@@ -658,48 +602,70 @@ const startServer = async () => {
         console.log(chalk.yellow('  Memulai countdown untuk optimasi performa...'));
         let count = 5;
         const countdownInterval = setInterval(() => {
-          process.stdout.write(`\r  ${chalk.magenta('⏱')} ${chalk.white.bold(count)}`);
+          process.stdout.write(`\r  ${chalk.magenta('⏱')} ${chalk.white.bold(count)}...`);
           count--;
           if (count < 0) {
             clearInterval(countdownInterval);
-            process.stdout.write('\n');
-            console.log(chalk.green.bold('  ✅ Optimasi performa selesai!'));
+            process.stdout.write('\n\n');
             
-            // Tambahkan animasi baru - Typing effect
-            const message = '  🔥 MAMAT API siap melayani permintaan Anda dengan kecepatan tinggi!';
-            let charIndex = 0;
-            const typingInterval = setInterval(() => {
-              process.stdout.write(chalk.cyan(message.charAt(charIndex)));
-              charIndex++;
-              if (charIndex >= message.length) {
-                clearInterval(typingInterval);
-                console.log('\n');
-                
-                // Tambahkan animasi baru - Pulse effect
-                let pulse = 0;
-                const pulseInterval = setInterval(() => {
-                  const intensity = Math.sin(pulse) * 0.5 + 0.5;
-                  const colorGradient = gradient(['#00ffff', '#ff00ff']);
-                  const message = '❤️ Server berjalan dengan baik - Monitoring aktif';
-                  process.stdout.write(`\r  ${colorGradient(message)}`);
-                  pulse += 0.1;
-                  if (pulse >= 10) {
-                    clearInterval(pulseInterval);
-                    console.log('\n\n');
-                    console.log(chalk.green.bold('  🎉 Semua sistem berjalan normal! Selamat bekerja!'));
-                  }
-                }, 100);
+            // Tambahkan animasi baru - Pulse effect
+            let pulse = 0;
+            const pulseInterval = setInterval(() => {
+              const intensity = Math.sin(pulse) * 0.5 + 0.5;
+              const colorGradient = gradient(['#00ffff', '#ff00ff']);
+              const message = '❤️ Server berjalan dengan baik - Monitoring aktif';
+              process.stdout.write(`\r  ${colorGradient(message)}`);
+              pulse += 0.1;
+              if (pulse >= 10) {
+                clearInterval(pulseInterval);
+                console.log('\n\n');
+                console.log(chalk.green.bold('  🎉 Semua sistem berjalan normal! Selamat bekerja!'));
               }
-            }, 50);
+            }, 100);
           }
         }, 1000);
       }, 3000);
     });
   } catch (err) {
-    console.error(chalk.red('❌ Error saat memulai server:'), err);
+    logger.error(`❌ Error saat memulai server: ${err.message}`);
     process.exit(1);
   }
 };
 
-// Jalankan server
+// Panggil fungsi untuk memulai server
 startServer();
+
+// Tangani unhandled rejections
+process.on('unhandledRejection', (err) => {
+  logger.error(`❌ Unhandled Rejection: ${err.message}`);
+  console.error(err.stack);
+});
+
+// Tangani uncaught exceptions
+process.on('uncaughtException', (err) => {
+  logger.error(`❌ Uncaught Exception: ${err.message}`);
+  console.error(err.stack);
+  process.exit(1);
+});
+
+// Tangani SIGTERM
+process.on('SIGTERM', () => {
+  logger.info('👋 SIGTERM received. Shutting down gracefully...');
+  if (server) {
+    server.close(() => {
+      logger.info('🔴 Server closed');
+      if (redisClient && redisClient.status === 'ready') {
+        redisClient.quit().then(() => {
+          logger.info('🔴 Redis connection closed');
+          process.exit(0);
+        });
+      } else {
+        process.exit(0);
+      }
+    });
+  } else {
+    process.exit(0);
+  }
+});
+
+module.exports = app;
