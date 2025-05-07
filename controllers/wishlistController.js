@@ -1,67 +1,65 @@
-const Wishlist = require('../models/Wishlist');
-const Product = require('../models/Product');
-const Cart = require('../models/Cart');
-const AppError = require('../utils/appError');
+const Wishlist = require('../models/wishlistModel');
+const Product = require('../models/productModel');
+const Cart = require('../models/cartModel');
 const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 
-// Get user's wishlist
+// Mendapatkan wishlist pengguna
 exports.getWishlist = catchAsync(async (req, res, next) => {
-  const userId = req.user.id;
-  
-  let wishlist = await Wishlist.findOne({ user: userId })
-    .populate({
-      path: 'items.product',
-      select: 'name price images stock discount'
-    });
-  
+  let wishlist = await Wishlist.findOne({ user: req.user.id }).populate({
+    path: 'products',
+    select: 'name price images description stock'
+  });
+
   if (!wishlist) {
-    wishlist = await Wishlist.create({ user: userId, items: [] });
+    wishlist = await Wishlist.create({
+      user: req.user.id,
+      products: []
+    });
   }
-  
+
   res.status(200).json({
     status: 'success',
     data: {
-      wishlist: {
-        items: wishlist.items,
-        totalItems: wishlist.items.length
-      }
+      wishlist
     }
   });
 });
 
-// Add product to wishlist
+// Menambahkan produk ke wishlist
 exports.addToWishlist = catchAsync(async (req, res, next) => {
-  const { productId } = req.params;
-  const userId = req.user.id;
-  
-  // Validate product
+  const { productId } = req.body;
+
+  // Validasi produk
   const product = await Product.findById(productId);
   if (!product) {
     return next(new AppError('Produk tidak ditemukan', 404));
   }
-  
-  // Find or create wishlist
-  let wishlist = await Wishlist.findOne({ user: userId });
+
+  // Cari atau buat wishlist
+  let wishlist = await Wishlist.findOne({ user: req.user.id });
   if (!wishlist) {
-    wishlist = await Wishlist.create({ user: userId, items: [] });
+    wishlist = await Wishlist.create({
+      user: req.user.id,
+      products: []
+    });
   }
-  
-  // Check if product is already in wishlist
-  const itemExists = wishlist.items.some(item => 
-    item.product.toString() === productId
-  );
-  
-  if (itemExists) {
-    return next(new AppError('Produk sudah ada di wishlist', 400));
+
+  // Cek apakah produk sudah ada di wishlist
+  if (wishlist.products.includes(productId)) {
+    return res.status(200).json({
+      status: 'success',
+      message: 'Produk sudah ada di wishlist',
+      data: {
+        wishlist
+      }
+    });
   }
-  
-  // Add product to wishlist
-  wishlist.items.push({
-    product: productId
-  });
-  
+
+  // Tambahkan produk ke wishlist
+  wishlist.products.push(productId);
   await wishlist.save();
-  
+
   res.status(200).json({
     status: 'success',
     message: 'Produk berhasil ditambahkan ke wishlist',
@@ -71,27 +69,25 @@ exports.addToWishlist = catchAsync(async (req, res, next) => {
   });
 });
 
-// Remove product from wishlist
+// Menghapus produk dari wishlist
 exports.removeFromWishlist = catchAsync(async (req, res, next) => {
   const { productId } = req.params;
-  const userId = req.user.id;
-  
-  const wishlist = await Wishlist.findOne({ user: userId });
+
+  const wishlist = await Wishlist.findOne({ user: req.user.id });
   if (!wishlist) {
     return next(new AppError('Wishlist tidak ditemukan', 404));
   }
-  
-  const itemIndex = wishlist.items.findIndex(item => 
-    item.product.toString() === productId
-  );
-  
-  if (itemIndex === -1) {
+
+  // Cek apakah produk ada di wishlist
+  const productIndex = wishlist.products.indexOf(productId);
+  if (productIndex === -1) {
     return next(new AppError('Produk tidak ditemukan di wishlist', 404));
   }
-  
-  wishlist.items.splice(itemIndex, 1);
+
+  // Hapus produk dari wishlist
+  wishlist.products.splice(productIndex, 1);
   await wishlist.save();
-  
+
   res.status(200).json({
     status: 'success',
     message: 'Produk berhasil dihapus dari wishlist',
@@ -101,63 +97,65 @@ exports.removeFromWishlist = catchAsync(async (req, res, next) => {
   });
 });
 
-// Move product from wishlist to cart
+// Memindahkan produk dari wishlist ke keranjang
 exports.moveToCart = catchAsync(async (req, res, next) => {
   const { productId } = req.params;
-  const userId = req.user.id;
-  
-  // Find wishlist
-  const wishlist = await Wishlist.findOne({ user: userId });
-  if (!wishlist) {
-    return next(new AppError('Wishlist tidak ditemukan', 404));
-  }
-  
-  // Check if product is in wishlist
-  const itemIndex = wishlist.items.findIndex(item => 
-    item.product.toString() === productId
-  );
-  
-  if (itemIndex === -1) {
-    return next(new AppError('Produk tidak ditemukan di wishlist', 404));
-  }
-  
-  // Validate product
+  const { quantity = 1 } = req.body;
+
+  // Validasi produk
   const product = await Product.findById(productId);
   if (!product) {
     return next(new AppError('Produk tidak ditemukan', 404));
   }
-  
-  // Find or create cart
-  let cart = await Cart.findOne({ user: userId });
-  if (!cart) {
-    cart = await Cart.create({ user: userId, items: [] });
+
+  // Cek stok produk
+  if (product.stock < quantity) {
+    return next(new AppError('Stok produk tidak mencukupi', 400));
   }
-  
-  // Check if product is already in cart
-  const cartItemIndex = cart.items.findIndex(item => 
+
+  // Cari wishlist
+  const wishlist = await Wishlist.findOne({ user: req.user.id });
+  if (!wishlist) {
+    return next(new AppError('Wishlist tidak ditemukan', 404));
+  }
+
+  // Cek apakah produk ada di wishlist
+  const productIndex = wishlist.products.indexOf(productId);
+  if (productIndex === -1) {
+    return next(new AppError('Produk tidak ditemukan di wishlist', 404));
+  }
+
+  // Cari atau buat keranjang
+  let cart = await Cart.findOne({ user: req.user.id });
+  if (!cart) {
+    cart = await Cart.create({ user: req.user.id, items: [] });
+  }
+
+  // Cek apakah produk sudah ada di keranjang
+  const itemIndex = cart.items.findIndex(item => 
     item.product.toString() === productId
   );
-  
-  if (cartItemIndex > -1) {
-    // Product already in cart, increment quantity
-    cart.items[cartItemIndex].quantity += 1;
+
+  if (itemIndex > -1) {
+    // Produk sudah ada, update jumlah
+    cart.items[itemIndex].quantity += quantity;
   } else {
-    // Add product to cart
+    // Produk belum ada, tambahkan ke keranjang
     cart.items.push({
       product: productId,
-      quantity: 1
+      quantity,
+      price: product.price
     });
   }
-  
-  // Remove from wishlist
-  wishlist.items.splice(itemIndex, 1);
-  
-  // Save both documents
-  await Promise.all([
-    cart.save(),
-    wishlist.save()
-  ]);
-  
+
+  // Hitung ulang total
+  cart.calculateTotals();
+  await cart.save();
+
+  // Hapus produk dari wishlist (opsional)
+  wishlist.products.splice(productIndex, 1);
+  await wishlist.save();
+
   res.status(200).json({
     status: 'success',
     message: 'Produk berhasil dipindahkan ke keranjang',

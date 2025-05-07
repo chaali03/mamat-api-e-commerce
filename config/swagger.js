@@ -93,6 +93,22 @@ const options = {
             }
           }
         },
+        Wishlist: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'string',
+              example: '60d21b4667d0d8992e610c85'
+            },
+            products: {
+              type: 'array',
+              items: {
+                type: 'string',
+                example: '60d21b4667d0d8992e610c85'
+              }
+            }
+          }
+        },
         ErrorResponse: {
           type: 'object',
           properties: {
