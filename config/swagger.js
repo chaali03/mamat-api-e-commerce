@@ -53,6 +53,46 @@ const options = {
             }
           }
         },
+        CartItem: {
+          type: 'object',
+          properties: {
+            product: {
+              type: 'string',
+              example: '60d21b4667d0d8992e610c85'
+            },
+            quantity: {
+              type: 'number',
+              example: 2
+            },
+            price: {
+              type: 'number',
+              example: 899000
+            }
+          }
+        },
+        Cart: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'string',
+              example: '60d21b4667d0d8992e610c85'
+            },
+            items: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/CartItem'
+              }
+            },
+            totalPrice: {
+              type: 'number',
+              example: 1798000
+            },
+            totalItems: {
+              type: 'number',
+              example: 2
+            }
+          }
+        },
         ErrorResponse: {
           type: 'object',
           properties: {

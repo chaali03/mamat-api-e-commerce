@@ -1,183 +1,168 @@
-const Cart = require('../models/Cart');
-const Product = require('../models/Product');
+const Cart = require('../models/cartModel');
+const Product = require('../models/productModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
+// Mendapatkan keranjang belanja pengguna
 exports.getCart = catchAsync(async (req, res, next) => {
-  const userId = req.user.id;
-  
-  let cart = await Cart.findOne({ user: userId })
-    .populate({
-      path: 'items.product',
-      select: 'name price images stock discount'
-    });
-  
-  if (!cart) {
-    cart = await Cart.create({ user: userId, items: [] });
-  }
-  
-  // Calculate the total price
-  let totalPrice = 0;
-  cart.items.forEach(item => {
-    const price = item.product.discount 
-      ? item.product.price * (1 - item.product.discount / 100) 
-      : item.product.price;
-    totalPrice += price * item.quantity;
+  const cart = await Cart.findOne({ user: req.user.id }).populate({
+    path: 'items.product',
+    select: 'name price images stock'
   });
-  
+
+  if (!cart) {
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        items: [],
+        totalItems: 0,
+        totalPrice: 0
+      }
+    });
+  }
+
   res.status(200).json({
     status: 'success',
-    data: {
-      cart: {
-        items: cart.items,
-        totalItems: cart.items.length,
-        totalPrice: Math.round(totalPrice * 100) / 100
-      }
-    }
+    data: cart
   });
 });
 
-exports.addToCart = catchAsync(async (req, res, next) => {
+// Menambahkan item ke keranjang
+exports.addItem = catchAsync(async (req, res, next) => {
   const { productId, quantity = 1 } = req.body;
-  const userId = req.user.id;
-  
-  // Product validation
+
+  // Validasi produk
   const product = await Product.findById(productId);
   if (!product) {
     return next(new AppError('Produk tidak ditemukan', 404));
   }
-  
-  // Stock validation
+
+  // Cek stok produk
   if (product.stock < quantity) {
     return next(new AppError('Stok produk tidak mencukupi', 400));
   }
-  
-  // Find or create a cart
-  let cart = await Cart.findOne({ user: userId });
+
+  // Cari atau buat keranjang
+  let cart = await Cart.findOne({ user: req.user.id });
   if (!cart) {
-    cart = await Cart.create({ user: userId, items: [] });
+    cart = await Cart.create({ user: req.user.id, items: [] });
   }
-  
-  // Check if the product is already in the cart
-  const itemIndex = cart.items.findIndex(item => item.product.toString() === productId);
-  
+
+  // Cek apakah produk sudah ada di keranjang
+  const itemIndex = cart.items.findIndex(item => 
+    item.product.toString() === productId
+  );
+
   if (itemIndex > -1) {
-    // Product already exists, update quantity
+    // Produk sudah ada, update jumlah
     cart.items[itemIndex].quantity += quantity;
   } else {
-    // Product not available yet, add to cart
+    // Produk belum ada, tambahkan ke keranjang
     cart.items.push({
       product: productId,
-      quantity
+      quantity,
+      price: product.price
     });
   }
-  
+
+  // Hitung ulang total
+  cart.calculateTotals();
   await cart.save();
-  
+
   res.status(200).json({
     status: 'success',
-    message: 'Produk berhasil ditambahkan ke keranjang',
-    data: {
-      cart
-    }
+    data: cart
   });
 });
 
-exports.updateCartItem = catchAsync(async (req, res, next) => {
+// Mengupdate jumlah item di keranjang
+exports.updateItem = catchAsync(async (req, res, next) => {
   const { itemId } = req.params;
   const { quantity } = req.body;
-  const userId = req.user.id;
-  
+
   if (!quantity || quantity < 1) {
-    return next(new AppError('Jumlah produk tidak valid', 400));
+    return next(new AppError('Jumlah harus lebih dari 0', 400));
   }
-  
-  const cart = await Cart.findOne({ user: userId });
+
+  const cart = await Cart.findOne({ user: req.user.id });
   if (!cart) {
     return next(new AppError('Keranjang tidak ditemukan', 404));
   }
-  
-  const itemIndex = cart.items.findIndex(item => item._id.toString() === itemId);
+
+  const itemIndex = cart.items.findIndex(item => 
+    item._id.toString() === itemId
+  );
+
   if (itemIndex === -1) {
     return next(new AppError('Item tidak ditemukan di keranjang', 404));
   }
-  
-  // Stock validation
+
+  // Validasi stok produk
   const product = await Product.findById(cart.items[itemIndex].product);
   if (product.stock < quantity) {
     return next(new AppError('Stok produk tidak mencukupi', 400));
   }
-  
+
+  // Update jumlah
   cart.items[itemIndex].quantity = quantity;
-  await cart.save();
   
+  // Hitung ulang total
+  cart.calculateTotals();
+  await cart.save();
+
   res.status(200).json({
     status: 'success',
-    message: 'Keranjang berhasil diupdate',
-    data: {
-      cart
-    }
+    data: cart
   });
 });
 
-exports.removeFromCart = catchAsync(async (req, res, next) => {
+// Menghapus item dari keranjang
+exports.removeItem = catchAsync(async (req, res, next) => {
   const { itemId } = req.params;
-  const userId = req.user.id;
-  
-  const cart = await Cart.findOne({ user: userId });
+
+  const cart = await Cart.findOne({ user: req.user.id });
   if (!cart) {
     return next(new AppError('Keranjang tidak ditemukan', 404));
   }
-  
-  const itemIndex = cart.items.findIndex(item => item._id.toString() === itemId);
+
+  const itemIndex = cart.items.findIndex(item => 
+    item._id.toString() === itemId
+  );
+
   if (itemIndex === -1) {
     return next(new AppError('Item tidak ditemukan di keranjang', 404));
   }
-  
+
+  // Hapus item
   cart.items.splice(itemIndex, 1);
-  await cart.save();
   
+  // Hitung ulang total
+  cart.calculateTotals();
+  await cart.save();
+
   res.status(200).json({
     status: 'success',
-    message: 'Produk berhasil dihapus dari keranjang',
-    data: {
-      cart
-    }
+    data: cart
   });
 });
 
+// Mengosongkan keranjang
 exports.clearCart = catchAsync(async (req, res, next) => {
-  const userId = req.user.id;
+  const cart = await Cart.findOne({ user: req.user.id });
   
-  const cart = await Cart.findOne({ user: userId });
   if (!cart) {
-    return next(new AppError('Keranjang tidak ditemukan', 404));
+    return res.status(204).json({
+      status: 'success',
+      data: null
+    });
   }
-  
+
   cart.items = [];
+  cart.calculateTotals();
   await cart.save();
-  
+
   res.status(200).json({
     status: 'success',
-    message: 'Keranjang berhasil dikosongkan',
-    data: {
-      cart
-    }
-  });
-});
-
-exports.checkout = catchAsync(async (req, res, next) => {
-  const userId = req.user.id;
-  
-
-// Checkout implementation will be connected to order controller
-// Checkout logic will move items from cart to order
-  
-  res.status(200).json({
-    status: 'success',
-    message: 'Checkout berhasil',
-    data: {
-      orderId: 'sample-order-id'   // This will be replaced with the actual order ID
-    }
+    data: cart
   });
 });
