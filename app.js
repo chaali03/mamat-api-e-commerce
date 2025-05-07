@@ -697,3 +697,6 @@ const startServer = async () => {
 
 // Panggil fungsi startServer untuk memulai server
 startServer();
+
+// Routes
+app.use('/api/v1/coupons', couponRouter);

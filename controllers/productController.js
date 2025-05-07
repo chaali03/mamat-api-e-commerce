@@ -482,6 +482,134 @@ exports.getProductsOnSale = cacheMiddleware('on_sale', 3600)(catchAsync(async (r
   });
 }));
 
+// Fungsi pencarian dan filter produk
+exports.searchProducts = catchAsync(async (req, res, next) => {
+  // Ekstrak parameter pencarian dan filter dari query
+  const {
+    keyword,
+    category,
+    minPrice,
+    maxPrice,
+    brand,
+    sort,
+    rating,
+    inStock,
+    page = 1,
+    limit = 10
+  } = req.query;
+
+  // Buat objek filter
+  const filter = {};
+
+  // Filter berdasarkan keyword (nama atau deskripsi)
+  if (keyword) {
+    filter.$or = [
+      { name: { $regex: keyword, $options: 'i' } },
+      { description: { $regex: keyword, $options: 'i' } }
+    ];
+  }
+
+  // Filter berdasarkan kategori
+  if (category) {
+    filter.category = category;
+  }
+
+  // Filter berdasarkan brand
+  if (brand) {
+    filter.brand = brand;
+  }
+
+  // Filter berdasarkan rentang harga
+  if (minPrice || maxPrice) {
+    filter.price = {};
+    if (minPrice) filter.price.$gte = Number(minPrice);
+    if (maxPrice) filter.price.$lte = Number(maxPrice);
+  }
+
+  // Filter berdasarkan rating
+  if (rating) {
+    filter.ratingsAverage = { $gte: Number(rating) };
+  }
+
+  // Filter berdasarkan ketersediaan stok
+  if (inStock === 'true') {
+    filter.stock = { $gt: 0 };
+  }
+
+  // Buat objek sort
+  let sortObj = {};
+  if (sort) {
+    const sortFields = sort.split(',');
+    sortFields.forEach(field => {
+      if (field.startsWith('-')) {
+        sortObj[field.substring(1)] = -1;
+      } else {
+        sortObj[field] = 1;
+      }
+    });
+  } else {
+    // Default sort by newest
+    sortObj = { createdAt: -1 };
+  }
+
+  // Hitung pagination
+  const skip = (Number(page) - 1) * Number(limit);
+
+  // Eksekusi query
+  const products = await Product.find(filter)
+    .sort(sortObj)
+    .skip(skip)
+    .limit(Number(limit));
+
+  // Hitung total produk yang sesuai dengan filter
+  const totalProducts = await Product.countDocuments(filter);
+
+  // Hitung total halaman
+  const totalPages = Math.ceil(totalProducts / Number(limit));
+
+  res.status(200).json({
+    status: 'success',
+    results: products.length,
+    pagination: {
+      totalProducts,
+      totalPages,
+      currentPage: Number(page),
+      limit: Number(limit),
+      hasNextPage: Number(page) < totalPages,
+      hasPrevPage: Number(page) > 1
+    },
+    data: {
+      products
+    }
+  });
+});
+
+// Mendapatkan kategori produk yang tersedia
+exports.getProductCategories = catchAsync(async (req, res, next) => {
+  const categories = await Product.distinct('category');
+  
+  res.status(200).json({
+    status: 'success',
+    results: categories.length,
+    data: {
+      categories
+    }
+  });
+});
+
+// Mendapatkan brand produk yang tersedia
+exports.getProductBrands = catchAsync(async (req, res, next) => {
+  const brands = await Product.distinct('brand');
+  
+  res.status(200).json({
+    status: 'success',
+    results: brands.length,
+    data: {
+      brands
+    }
+  });
+});
+
 // Make sure all your controller functions have the next parameter
 // For example:
 
@@ -495,20 +623,3 @@ exports.someFunction = catchAsync(async (req, res, next) => {
   // function body
 });
 
-// Error ini terjadi karena ada metode `search()` yang dipanggil setelah rangkaian metode lain (`filter`, `sort`, `limitFields`, `paginate`), tetapi metode `search` tidak tersedia atau tidak didefinisikan dengan benar dalam rantai metode tersebut.
-
-/* 
-Untuk memperbaiki masalah ini, kita perlu mengubah urutan pemanggilan metode di `productController.js`. Metode `search` seharusnya dipanggil sebelum metode `paginate` atau mungkin perlu didefinisikan terlebih dahulu.
-*/
-
-/* 
-Berikut adalah langkah-langkah untuk memperbaiki error:
-
-Ubah dari:
-const products = await features.filter().sort().limitFields().paginate().search();
-
-Menjadi:
-const products = await features.filter().sort().limitFields().search().paginate();
-*/
-
-// ... existing code ...

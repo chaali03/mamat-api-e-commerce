@@ -14,7 +14,116 @@ router.get('/featured', catchAsync(productController.getFeaturedProducts));
 router.get('/new-arrivals', catchAsync(productController.getNewArrivals));
 router.get('/on-sale', catchAsync(productController.getProductsOnSale));
 router.get('/category/:categoryId', catchAsync(productController.getProductsByCategory));
+
+/**
+ * @swagger
+ * /products/search:
+ *   get:
+ *     summary: Mencari dan memfilter produk
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         description: Kata kunci pencarian (nama atau deskripsi)
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter berdasarkan kategori
+ *       - in: query
+ *         name: brand
+ *         schema:
+ *           type: string
+ *         description: Filter berdasarkan brand
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Harga minimum
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Harga maksimum
+ *       - in: query
+ *         name: rating
+ *         schema:
+ *           type: number
+ *         description: Rating minimum (1-5)
+ *       - in: query
+ *         name: inStock
+ *         schema:
+ *           type: boolean
+ *         description: Filter produk yang tersedia stok
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *         description: Urutan hasil (contoh price,-createdAt)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Halaman yang ditampilkan
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Jumlah produk per halaman
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar produk
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 results:
+ *                   type: integer
+ *                   example: 10
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     products:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Product'
+ */
 router.get('/search', catchAsync(productController.searchProducts));
+
+/**
+ * @swagger
+ * /products/categories:
+ *   get:
+ *     summary: Mendapatkan daftar kategori produk
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar kategori
+ */
+router.get('/categories', catchAsync(productController.getProductCategories));
+
+/**
+ * @swagger
+ * /products/brands:
+ *   get:
+ *     summary: Mendapatkan daftar brand produk
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar brand
+ */
+router.get('/brands', catchAsync(productController.getProductBrands));
+
 router.get('/:id/similar', catchAsync(productController.getSimilarProducts));
 router.get('/:id', catchAsync(productController.getProduct));
 router.get('/top-selling', catchAsync(productController.getTopSellingProducts));
