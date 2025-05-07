@@ -699,4 +699,6 @@ const startServer = async () => {
 startServer();
 
 // Routes
+app.use('/api/compare', compareRouter);
+app.use('/api/social', socialRouter);
 app.use('/api/v1/coupons', couponRouter);
