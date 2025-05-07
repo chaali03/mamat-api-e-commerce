@@ -39,15 +39,16 @@ cartSchema.virtual('totalPrice').get(function() {
 });
 
 // Ubah bagian akhir file dari:
-const Cart = mongoose.model('Cart', cartSchema);
+// Hapus baris ini:
+// const Cart = mongoose.model('Cart', cartSchema);
 
-// Menjadi:
+// Dan ganti dengan:
 let Cart;
-try {
-  // Coba dapatkan model yang sudah ada
-  Cart = mongoose.model('Cart');
-} catch (error) {
-  // Jika model belum ada, buat model baru
+if (mongoose.models.Cart) {
+  // Gunakan model yang sudah ada
+  Cart = mongoose.models.Cart;
+} else {
+  // Buat model baru jika belum ada
   Cart = mongoose.model('Cart', cartSchema);
 }
 
