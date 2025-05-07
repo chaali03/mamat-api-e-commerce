@@ -121,6 +121,89 @@ const options = {
               example: 'Product not found'
             }
           }
+        },
+        Review: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'string',
+              example: '60d21b4667d0d8992e610c85'
+            },
+            product: {
+              type: 'string',
+              example: '60d21b4667d0d8992e610c85'
+            },
+            rating: {
+              type: 'number',
+              example: 4.5
+            },
+            title: {
+              type: 'string',
+              example: 'Keyboard yang sangat bagus'
+            },
+            review: {
+              type: 'string',
+              example: 'Keyboard ini sangat nyaman digunakan untuk gaming dan mengetik. Responsif dan tahan lama.'
+            },
+            images: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              example: ['review-image-1.jpg', 'review-image-2.jpg']
+            },
+            verified: {
+              type: 'boolean',
+              example: true
+            },
+            likes: {
+              type: 'number',
+              example: 5
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              example: '2023-01-15T08:40:51.620Z'
+            }
+          }
+        },
+        RatingStats: {
+          type: 'object',
+          properties: {
+            total: {
+              type: 'number',
+              example: 25
+            },
+            average: {
+              type: 'number',
+              example: 4.2
+            },
+            ratings: {
+              type: 'object',
+              properties: {
+                '5': {
+                  type: 'number',
+                  example: 10
+                },
+                '4': {
+                  type: 'number',
+                  example: 8
+                },
+                '3': {
+                  type: 'number',
+                  example: 5
+                },
+                '2': {
+                  type: 'number',
+                  example: 1
+                },
+                '1': {
+                  type: 'number',
+                  example: 1
+                }
+              }
+            }
+          }
         }
       }
     }
