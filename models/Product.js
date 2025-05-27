@@ -8,7 +8,8 @@ const BRANDS = [
   'Ajazz', 'Aula', 'Rexus', 'Noir', 'Armaggeddon', 'Fantech', 'Digital Alliance',
   'Razer', 'Logitech', 'SteelSeries', 'HyperX', 'Corsair', 'Keychron', 'Royal Kludge',
   'Ducky', 'Varmilo', 'Leopold', 'Glorious', 'Wooting', 'Akko', 'Gateron', 'Kailh',
-  'JWK', 'Durock', 'Everglide', 'Outemu', 'Tecware', 'Redragon', 'Bloody', 'Monsgeek'
+  'JWK', 'Durock', 'Everglide', 'Outemu', 'Tecware', 'Redragon', 'Bloody', 'Monsgeek',
+  'Cherry'
 ];
 
 const CATEGORIES = ['Keyboard', 'Mouse', 'Headset', 'Mousepad', 'Switch', 'Accessories'];
@@ -346,9 +347,9 @@ const productSchema = new mongoose.Schema({
     uppercase: true,
     validate: {
       validator: function(v) {
-        return validator.matches(v, /^[A-Z0-9]{6,10}$/);
+        return validator.matches(v, /^[A-Z0-9-]{6,20}$/);
       },
-      message: 'ID produk harus 6-10 karakter alfanumerik'
+      message: 'ID produk harus 6-20 karakter alfanumerik'
     }
   },
   sku: {
@@ -373,13 +374,11 @@ const productSchema = new mongoose.Schema({
       },
       message: 'Nama produk tidak boleh mengandung spasi ganda'
     }
-    // Remove index: true from here if it exists
   },
   slug: {
     type: String,
     unique: true,
     lowercase: true
-    // Remove index: true from here
   },
   description: {
     type: String,
@@ -518,15 +517,50 @@ const productSchema = new mongoose.Schema({
       message: 'Format berat tidak valid (contoh: "950g")'
     }
   },
+  // Modifikasi validasi dimensions untuk menerima format dari routes/products.js
   dimensions: {
     type: String,
     required: [true, 'Dimensi produk wajib diisi'],
     validate: {
       validator: function(v) {
-        return validator.matches(v, /^\d+×\d+×\d+\s?mm$/i);
+        return validator.matches(v, /^\d+(?:mm)?\s?[x×]\s?\d+(?:mm)?\s?[x×]\s?\d+(?:mm)?$/i);
       },
-      message: 'Format dimensi tidak valid (contoh: "360×120×40mm")'
+      message: 'Format dimensi tidak valid (contoh: "360×120×40mm" atau "360mm x 120mm x 40mm")'
     }
+  },
+  
+  // Tambahkan field mainImage untuk menyimpan gambar utama
+  mainImage: {
+    type: String
+  },
+  
+  // Modifikasi variants untuk menyesuaikan dengan data di routes/products.js
+  variants: {
+    type: [{
+      name: String,
+      color: String,
+      image: String,
+      price: Number,
+      stock: {
+        type: Number,
+        min: 0
+      },
+      quantity: String,
+      switchType: String
+    }],
+    default: []
+  },
+  
+  // Tambahkan field originalPrice untuk produk dengan diskon
+  originalPrice: {
+    type: Number,
+    min: [1000, 'Harga original minimal Rp 1.000']
+  },
+  
+  // Tambahkan field shortDescription
+  shortDescription: {
+    type: String,
+    maxlength: [150, 'Deskripsi singkat maksimal 150 karakter']
   },
   warranty: {
     type: String,
@@ -582,7 +616,6 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product'
   }],
-  // Tambahkan field reviews jika belum ada
   reviews: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Review'
@@ -841,10 +874,6 @@ productSchema.index({ isOnSale: 1 });
 
 // Discount index
 productSchema.index({ discount: -1 });
-
-// IMPORTANT: Remove or comment out these two lines if they exist
-// productSchema.index({ name: 1 });
-// productSchema.index({ slug: 1 });
 
 // Create the model
 const Product = mongoose.model('Product', productSchema);
