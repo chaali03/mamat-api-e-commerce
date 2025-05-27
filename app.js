@@ -9,8 +9,6 @@ const fs = require('fs');
 const crypto = require('crypto');
 const cors = require('cors');
 const helmet = require('helmet');
-// Remove this line
-// const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
@@ -31,13 +29,11 @@ const nodemailer = require('nodemailer');
 const xss = require('xss');
 const socketio = require('socket.io');
 const sanitize = require('mongo-sanitize');
-const chalk = require('chalk'); // Tambahkan import chalk di sini
+const chalk = require('chalk');
 const figlet = require('figlet');
 const gradient = require('gradient-string');
 const ora = require('ora');
 const boxen = require('boxen');
-const EventEmitter = require('events');
-EventEmitter.defaultMaxListeners = 15; // Atur ke nilai yang lebih tinggi dari 10
 
 /*========================================
   INISIALISASI APLIKASI
@@ -62,7 +58,7 @@ if (process.env.HTTPS === 'true') {
 }
 
 /*========================================
-  KONFIGURASI LOGGER PREMIUM
+  KONFIGURASI LOGGER
 ========================================*/
 const logger = {
   info: (msg) => console.log(`\x1b[36m[${new Date().toISOString()}] INFO\x1b[0m: ${msg}`),
@@ -192,7 +188,7 @@ if (process.env.SOCKET_ENABLED === 'true') {
 }
 
 /*========================================
-  MIDDLEWARE PREMIUM
+  MIDDLEWARE UTAMA
 ========================================*/
 app.use((req, res, next) => {
   req.startTime = process.hrtime();
@@ -221,7 +217,7 @@ app.use(express.urlencoded({
 
 app.use(cookieParser(process.env.COOKIE_SECRET || 'default-cookie-secret'));
 
-// CORS Configuration
+// Konfigurasi CORS
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -265,7 +261,6 @@ app.use((req, res, next) => {
 });
 
 // MongoDB Injection Protection
-// Middleware kustom untuk sanitasi
 app.use((req, res, next) => {
   if (req.body) req.body = sanitize(req.body);
   if (req.query) req.query = sanitize(req.query);
@@ -367,19 +362,44 @@ if (process.env.NODE_ENV === 'development') {
 /*========================================
   STATIC FILES & SWAGGER DOCS
 ========================================*/
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  maxAge: '1y',
-  immutable: true,
-  setHeaders: (res, path) => {
-    if (path.endsWith('.gz')) {
-      res.setHeader('Content-Encoding', 'gzip');
-    }
-  }
-}));
+// Tambahkan middleware untuk mengizinkan CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
 
+// Pastikan folder uploads dapat diakses secara publik
+// Middleware untuk menangani permintaan gambar dengan nama file yang tidak tepat
+app.use('/images/products', (req, res, next) => {
+  const originalUrl = req.url;
+  // Periksa apakah URL mengandung pola tanpa tanda hubung sebelum 'main.png'
+  if (originalUrl.match(/([A-Za-z0-9]+)main\.png/)) {
+    // Ubah URL dengan menambahkan tanda hubung
+    req.url = originalUrl.replace(/([A-Za-z0-9]+)main\.png/g, '$1-main.png');
+    console.log(`Redirecting image request from ${originalUrl} to ${req.url}`);
+  }
+  next();
+});
+
+// Pastikan middleware ini ditempatkan SEBELUM kode static file serving
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+// Update the static file middleware with proper MIME types
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1d',
-  extensions: ['html', 'htm']
+  extensions: ['html', 'htm'],
+  setHeaders: (res, path) => {
+    // Set proper content type for images
+    if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.gif')) {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (path.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    }
+  }
 }));
 
 // Swagger documentation
@@ -462,43 +482,33 @@ const authenticate = async (req, res, next) => {
 };
 
 /*========================================
-  IMPORT ROUTES
+  ROUTES IMPLEMENTASI
 ========================================*/
-const productRoutes = require('./routes/products');
-// Register routes
-// Nonaktifkan sementara rute yang belum ada
-// app.use('/api/auth', authRoutes);
-// app.use('/api/products', productRoutes);
-// app.use('/api/cart', cartRoutes);
-// app.use('/api/orders', orderRoutes);
-// app.use('/api/reviews', reviewRoutes);
-// app.use('/api/wishlist', wishlistRouter);
-// app.use('/api/payments', paymentRoutes);
-// app.use('/api/address', addressRoutes);
-// app.use('/api/profile', profileRoutes);
-// app.use('/api/notifications', notificationRoutes);
-// app.use('/api/returns', returnRoutes);
-// app.use('/api/users', userRoutes);
-// app.use('/api/categories', categoryRoutes);
-// app.use('/api/search', searchRoutes);
-// app.use('/api/compare', compareRouter);
-// app.use('/api/social', socialRouter);
-// app.use('/api/coupon', couponRouter);
+// Import routers
+const productsRouter = require('./routes/products');
+const authRouter = require('./routes/auth');
+const userRouter = require('./routes/users');
+const categoriesRouter = require('./routes/categories'); // Tambahkan import ini
 
-// Tambahkan rute default untuk testing
-app.get('/api/products', (req, res) => {
-  res.json({
+// API Routes
+app.use('/api/products', productsRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/users', userRouter);
+app.use('/api/categories', categoriesRouter); // Tambahkan route ini
+
+// Health Check Route
+app.get('/health', (req, res) => {
+  res.status(200).json({
     status: 'success',
-    message: 'Produk API berhasil diakses',
-    data: [
-      { id: 1, name: 'Produk 1', price: 100000 },
-      { id: 2, name: 'Produk 2', price: 200000 },
-      { id: 3, name: 'Produk 3', price: 300000 }
-    ]
+    message: 'Server is healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    redis: redisClient.status === 'ready' ? 'connected' : 'disconnected'
   });
 });
 
-// Tambahkan rute default untuk testing
+// Route untuk status autentikasi
 app.get('/api/auth/status', (req, res) => {
   res.json({
     status: 'success',
@@ -507,15 +517,45 @@ app.get('/api/auth/status', (req, res) => {
   });
 });
 
+// 404 Handler
+app.use((req, res, next) => {
+  res.status(404).json({
+    status: 'error',
+    message: 'Endpoint not found'
+  });
+});
+
+/*========================================
+  ERROR HANDLING MIDDLEWARE
+========================================*/
+app.use((err, req, res, next) => {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+  
+  logger.error(`${err.statusCode} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  
+  if (process.env.NODE_ENV === 'development') {
+    res.status(err.statusCode).json({
+      status: err.status,
+      message: err.message,
+      error: err,
+      stack: err.stack
+    });
+  } else {
+    res.status(err.statusCode).json({
+      status: err.status,
+      message: err.message
+    });
+  }
+});
+
 /*========================================
   START SERVER
 ========================================*/
 const PORT = process.env.PORT || 5000;
 
-// Function untuk animasi loading - pastikan ini didefinisikan sebelum digunakan
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Function to start the server
 const startServer = async () => {
   try {
     console.clear();
@@ -546,9 +586,9 @@ const startServer = async () => {
       color: 'yellow'
     }).start();
     
-    await connectWithRetry(); // Gunakan fungsi yang sudah ada
+    await connectWithRetry();
     
-    await sleep(1000); // Tambahkan delay untuk efek visual
+    await sleep(1000);
     dbSpinner.succeed(chalk.green('MongoDB terhubung dengan sukses!'));
     
     // Tampilkan spinner saat memulai server
@@ -559,10 +599,9 @@ const startServer = async () => {
     }).start();
     
     server.listen(PORT, async () => {
-      await sleep(1500); // Tambahkan delay untuk efek visual
+      await sleep(1500);
       serverSpinner.succeed(chalk.green(`Server berjalan pada port ${PORT}`));
       
-      // Tampilkan informasi server dalam box
       console.log('\n');
       
       const serverInfo = boxen(
@@ -584,7 +623,6 @@ const startServer = async () => {
       
       console.log(serverInfo);
       
-      // Animasi loading bar
       const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
       let i = 0;
       
@@ -593,12 +631,10 @@ const startServer = async () => {
         process.stdout.write(`\r  ${chalk.cyan(frames[i++ % frames.length])} ${chalk.green('API siap menerima permintaan...')}`);
       }, 80);
       
-      // Hentikan animasi loading setelah beberapa detik
       setTimeout(() => {
         clearInterval(loadingInterval);
         process.stdout.write('\n\n');
         
-        // Tambahkan animasi baru - Countdown
         console.log(chalk.yellow('  Memulai countdown untuk optimasi performa...'));
         let count = 5;
         const countdownInterval = setInterval(() => {
@@ -608,7 +644,6 @@ const startServer = async () => {
             clearInterval(countdownInterval);
             process.stdout.write('\n\n');
             
-            // Tambahkan animasi baru - Pulse effect
             let pulse = 0;
             const pulseInterval = setInterval(() => {
               const intensity = Math.sin(pulse) * 0.5 + 0.5;
@@ -669,3 +704,23 @@ process.on('SIGTERM', () => {
 });
 
 module.exports = app;
+
+// HAPUS kode berikut:
+// module.exports = {
+//   mechanicalKeyboards,
+//   membraneKeyboards,
+//   opticalKeyboards,
+//   magneticKeyboards,
+//   gamingMice,
+//   officeMice,
+//   ergonomicMice,
+//   hardMousepads,
+//   softMousepads,
+//   gamingHeadsets,
+//   musicHeadsets,
+//   noiseCancellingHeadsets,
+//   linearSwitches,
+//   tactileSwitches,
+//   clickySwitches,
+//   silentSwitches
+// };
