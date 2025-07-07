@@ -1,12 +1,13 @@
-const express = require('express');
+import express from 'express';
+import authenticate from '../middleware/auth.js';
+import Message from '../models/Message.js';
+import { AppError } from '../utils/AppError.js';
+import { catchAsync } from '../utils/catchAsync.js';
+
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const Message = require('../models/Message');
-const AppError = require('../utils/appError');
-const catchAsync = require('../utils/catchAsync');
 
 // Get all messages for a user
-router.get('/', protect, catchAsync(async (req, res) => {
+router.get('/', authenticate, catchAsync(async (req, res) => {
   const messages = await Message.find({
     $or: [
       { sender: req.user.id },
@@ -24,7 +25,7 @@ router.get('/', protect, catchAsync(async (req, res) => {
 }));
 
 // Send a new message
-router.post('/', protect, catchAsync(async (req, res) => {
+router.post('/', authenticate, catchAsync(async (req, res) => {
   const { receiver, content, type = 'text' } = req.body;
 
   if (!receiver || !content) {
@@ -47,7 +48,7 @@ router.post('/', protect, catchAsync(async (req, res) => {
 }));
 
 // Mark message as read
-router.patch('/:id/read', protect, catchAsync(async (req, res) => {
+router.patch('/:id/read', authenticate, catchAsync(async (req, res) => {
   const message = await Message.findOneAndUpdate(
     {
       _id: req.params.id,
@@ -72,4 +73,4 @@ router.patch('/:id/read', protect, catchAsync(async (req, res) => {
   });
 }));
 
-module.exports = router;
+export default router;
