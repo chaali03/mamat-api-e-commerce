@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const paymentController = require('../controllers/paymentController');
-const { authenticate } = require('../middleware/auth');
+import authenticate from '../middleware/auth.js';
 
 // Mendapatkan metode pembayaran yang tersedia
 router.get('/methods', paymentController.getPaymentMethods);
