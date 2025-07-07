@@ -1,18 +1,22 @@
-const express = require('express');
+import express from 'express';
+import { protect } from '../controllers/authController.js';
+import {
+  getProfile,
+  updateProfile,
+  changePassword,
+  getOrderHistory,
+  uploadUserAvatar,
+  resizeUserAvatar
+} from '../controllers/profileController.js';
+
 const router = express.Router();
-const profileController = require('../controllers/profileController');
-const { authenticate } = require('../middleware/auth');
 
-// Mendapatkan profil customer
-router.get('/', authenticate, profileController.getProfile);
+// Protect all routes after this middleware
+router.use(protect);
 
-// Mengupdate profil customer
-router.put('/', authenticate, profileController.updateProfile);
+router.get('/', getProfile);
+router.patch('/', uploadUserAvatar, resizeUserAvatar, updateProfile);
+router.patch('/change-password', changePassword);
+router.get('/orders', getOrderHistory);
 
-// Mengubah password
-router.put('/change-password', authenticate, profileController.changePassword);
-
-// Mendapatkan riwayat pesanan
-router.get('/orders', authenticate, profileController.getOrderHistory);
-
-module.exports = router;
+export default router;
