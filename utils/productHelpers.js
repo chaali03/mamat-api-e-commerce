@@ -1,9 +1,10 @@
 // utils/productHelpers.js
-const AppError = require('./appError');
+import { AppError } from './AppError.js';
 
 // Define allowed product categories
-const ALLOWED_CATEGORIES = ['Keyboard', 'Mouse', 'Mousepad', 'Headset', 'Switch', 'Accessories'];
-const CATEGORY_PREFIXES = {
+export const ALLOWED_CATEGORIES = ['Keyboard', 'Mouse', 'Mousepad', 'Headset', 'Switch', 'Accessories'];
+export const ALLOWED_BRANDS = ['Logitech', 'Razer', 'Corsair', 'SteelSeries', 'HyperX', 'Glorious', 'Zowie', 'Ducky', 'Varmilo', 'Leopold'];
+export const CATEGORY_PREFIXES = {
   Keyboard: 'KB',
   Mouse: 'MS',
   Mousepad: 'MP',
@@ -12,7 +13,7 @@ const CATEGORY_PREFIXES = {
   Accessories: 'AC'
 };
 
-const validateCategory = (category) => {
+export const validateCategory = (category) => {
   if (!ALLOWED_CATEGORIES.includes(category)) {
     throw new AppError(
       `Invalid product category. Allowed categories: ${ALLOWED_CATEGORIES.join(', ')}`,
@@ -21,20 +22,20 @@ const validateCategory = (category) => {
   }
 };
 
-const generateSKU = (category) => {
+export const generateSKU = (category) => {
   validateCategory(category);
   const prefix = category.substring(0, 2).toUpperCase();
   const randomNum = Math.floor(1000 + Math.random() * 9000);
   return `${prefix}-${randomNum}`;
 };
 
-const generateProductId = (category) => {
+export const generateProductId = (category) => {
   validateCategory(category);
   const randomNum = Math.floor(100 + Math.random() * 900);
   return `${CATEGORY_PREFIXES[category]}${randomNum}`;
 };
 
-const generateRating = () => ({
+export const generateRating = () => ({
   average: parseFloat((3.5 + Math.random() * 1.5).toFixed(1)),
   count: Math.floor(10 + Math.random() * 500),
   distribution: {
@@ -46,9 +47,9 @@ const generateRating = () => ({
   }
 });
 
-const generateWeight = (min = 800, max = 1000) => Math.floor(Math.random() * (max - min + 1)) + min;
+export const generateWeight = (min = 800, max = 1000) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-const generateProductVariants = (baseProduct) => {
+export const generateProductVariants = (baseProduct) => {
   const variants = ['Color', 'Size', 'Material'];
   const selectedVariant = variants[Math.floor(Math.random() * variants.length)];
   
@@ -64,26 +65,15 @@ const generateProductVariants = (baseProduct) => {
   };
 };
 
-const calculateDiscountPrice = (price, discountPercentage) => {
+export const calculateDiscountPrice = (price, discountPercentage) => {
   return parseFloat((price * (1 - discountPercentage / 100)).toFixed(2));
 };
 
-const generateDimensions = () => {
+export const generateDimensions = () => {
   const x = Math.floor(100 + Math.random() * 400);
   const y = Math.floor(50 + Math.random() * 200);
   const z = Math.floor(10 + Math.random() * 50);
   return `${x}×${y}×${z}mm`;
 };
 
-module.exports = {
-  ALLOWED_CATEGORIES,
-  CATEGORY_PREFIXES,
-  validateCategory,
-  generateSKU,
-  generateProductId,
-  generateRating,
-  generateWeight,
-  generateProductVariants,
-  calculateDiscountPrice,
-  generateDimensions
-};
+// All exports are now handled inline with export const
