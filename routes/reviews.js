@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import { protect, restrictTo } from '../controllers/authController.js';
+import * as reviewController from '../controllers/reviewController.js';
+
 const router = express.Router({ mergeParams: true });
-const reviewController = require('../controllers/reviewController');
-const { protect, restrictTo } = require('../controllers/authController');
 
 /**
  * @swagger
@@ -196,4 +197,4 @@ router.delete('/:id', reviewController.deleteReview);
  */
 router.post('/:id/like', reviewController.likeReview);
 
-module.exports = router;
+export default router;
