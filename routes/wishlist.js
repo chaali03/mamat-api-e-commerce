@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import { protect } from '../controllers/authController.js';
+import * as wishlistController from '../controllers/wishlistController.js';
+
 const router = express.Router();
-const wishlistController = require('../controllers/wishlistController');
-const { protect } = require('../controllers/authController');
 
 // Semua rute wishlist memerlukan autentikasi
 router.use(protect);
@@ -94,4 +95,4 @@ router.delete('/items/:productId', wishlistController.removeFromWishlist);
  */
 router.post('/items/:productId/move-to-cart', wishlistController.moveToCart);
 
-module.exports = router;
+export default router;
