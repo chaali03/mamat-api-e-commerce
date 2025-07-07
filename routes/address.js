@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const addressController = require('../controllers/addressController');
-const { authenticate } = require('../middleware/auth');
+import authenticate from '../middleware/auth.js';
 
 // Mendapatkan semua alamat user
 router.get('/', authenticate, addressController.getUserAddresses);
