@@ -1,17 +1,24 @@
-const express = require('express');
-const router = express.Router();
-const orderController = require('../controllers/orderController');
-const { authenticate } = require('../middleware/auth');
-const catchAsync = require('../utils/catchAsync');
+import express from 'express';
+import * as orderController from '../controllers/orderController.js';
+import authenticate from '../middleware/auth.js';
+import { catchAsync } from '../utils/catchAsync.js';
 
-// Mendapatkan semua pesanan user
+const router = express.Router();
+
+// Get all orders for user
 router.get('/', authenticate, catchAsync(orderController.getUserOrders));
 
-// Mendapatkan detail pesanan
+// Get order details
 router.get('/:orderId', authenticate, catchAsync(orderController.getOrderDetails));
 
-// Membatalkan pesanan
-router.put('/:orderId/cancel', authenticate, catchAsync(orderController.cancelOrder));
+// Create new order
+router.post('/', authenticate, catchAsync(orderController.createOrder));
+
+// Update order status
+router.patch('/:orderId/status', authenticate, catchAsync(orderController.updateOrderStatus));
+
+// Cancel order
+router.patch('/:orderId/cancel', authenticate, catchAsync(orderController.cancelOrder));
 
 // Konfirmasi penerimaan pesanan
 router.put('/:orderId/confirm-receipt', authenticate, catchAsync(orderController.confirmReceipt));
@@ -19,4 +26,4 @@ router.put('/:orderId/confirm-receipt', authenticate, catchAsync(orderController
 // Melacak pengiriman pesanan
 router.get('/:orderId/tracking', authenticate, catchAsync(orderController.trackOrder));
 
-module.exports = router;
+export default router;
