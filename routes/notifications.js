@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notificationController');
-const { authenticate } = require('../middleware/auth');
+import authenticate from '../middleware/auth.js';
 
 // Mendapatkan semua notifikasi user
 router.get('/', authenticate, notificationController.getUserNotifications);
