@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import Cart from '../models/Cart.js';
+
 const router = express.Router();
-const Cart = require('../models/Cart');
 
 // Get cart
 router.get('/', async (req, res) => {
@@ -61,4 +62,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
