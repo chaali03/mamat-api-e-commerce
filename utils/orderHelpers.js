@@ -6,7 +6,7 @@
  * Generate a unique order ID
  * @returns {string} Unique order ID
  */
-exports.generateOrderId = () => {
+export const generateOrderId = () => {
   const timestamp = new Date().getTime();
   const randomNum = Math.floor(Math.random() * 10000);
   return `ORD-${timestamp}-${randomNum}`;
@@ -19,7 +19,7 @@ exports.generateOrderId = () => {
  * @param {number} taxRate - Tax rate (decimal)
  * @returns {Object} Order totals
  */
-exports.calculateOrderTotal = (items, shippingCost = 0, taxRate = 0.11) => {
+export const calculateOrderTotal = (items, shippingCost = 0, taxRate = 0.11) => {
   // Calculate items price with discounts
   const itemsPrice = items.reduce((acc, item) => {
     const discountedPrice = item.discountPercentage 
@@ -48,7 +48,7 @@ exports.calculateOrderTotal = (items, shippingCost = 0, taxRate = 0.11) => {
  * @param {string} shippingMethod - Shipping method (regular/express)
  * @returns {number} Shipping cost
  */
-exports.calculateShippingCost = (totalWeight, shippingMethod) => {
+export const calculateShippingCost = (totalWeight, shippingMethod) => {
   let shippingCost = 0;
   
   if (shippingMethod === 'regular') {
@@ -65,7 +65,7 @@ exports.calculateShippingCost = (totalWeight, shippingMethod) => {
  * @param {Object} address - Shipping address object
  * @returns {boolean} Is address valid
  */
-exports.validateShippingAddress = (address) => {
+export const validateShippingAddress = (address) => {
   const requiredFields = ['street', 'city', 'postalCode', 'country'];
   return requiredFields.every(field => address[field] && address[field].trim() !== '');
 };
@@ -75,7 +75,7 @@ exports.validateShippingAddress = (address) => {
  * @param {Object} order - Order object
  * @returns {Object} Formatted order for email
  */
-exports.formatOrderForEmail = (order) => {
+export const formatOrderForEmail = (order) => {
   return {
     orderId: order.orderId,
     date: new Date(order.createdAt).toLocaleDateString('id-ID'),
