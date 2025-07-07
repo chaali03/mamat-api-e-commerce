@@ -1,9 +1,14 @@
-const nodemailer = require('nodemailer');
-const pug = require('pug');
-const htmlToText = require('html-to-text');
-const logger = require('./logger');
+import nodemailer from 'nodemailer';
+import pug from 'pug';
+import { convert } from 'html-to-text';
+import { logger } from './logger.js';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-module.exports = class Email {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export class Email {
   constructor(user, url) {
     this.to = user.email;
     this.firstName = user.name.split(' ')[0];
@@ -33,13 +38,14 @@ module.exports = class Email {
     });
   }
 
-  async send(template, subject) {
+  async send(template, subject, data = {}) {
     try {
       // 1) Render HTML based on a pug template
       const html = pug.renderFile(`${__dirname}/../views/email/${template}.pug`, {
         firstName: this.firstName,
         url: this.url,
-        subject
+        subject,
+        ...data
       });
 
       // 2) Define email options
@@ -48,7 +54,7 @@ module.exports = class Email {
         to: this.to,
         subject,
         html,
-        text: htmlToText.fromString(html)
+        text: convert(html)
       };
 
       // 3) Create a transport and send email
@@ -69,4 +75,25 @@ module.exports = class Email {
       'Your password reset token (valid for only 10 minutes)'
     );
   }
+
+  async sendOTP(otp) {
+    await this.send(
+      'forgotPasswordOtp',
+      'Your Password Reset OTP (valid for only 10 minutes)',
+      { otp, expiryMinutes: 10 }
+    );
+  }
+
+  async sendOrderConfirmation(order) {
+    await this.send(
+      'orderConfirmation',
+      'Your Order Confirmation',
+      { order }
+    );
+  }
+}
+
+export const sendOrderConfirmationEmail = async (user, order) => {
+  const email = new Email(user, '');
+  await email.sendOrderConfirmation(order);
 };
