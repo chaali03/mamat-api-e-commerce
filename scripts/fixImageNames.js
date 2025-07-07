@@ -15,7 +15,7 @@ function renameFiles(directory) {
         // Clean filename
         const cleanName = file
           .replace(/^'|'$/g, '') // Remove single quotes at start or end
-          .replace(/[:'()\\[\]{}]/g, '') // Remove colons, quotes, parentheses, brackets
+          .replace(/[:'()\[\]{}]/g, '') // Remove colons, quotes, parentheses, brackets
           .replace(/\s+/g, '-'); // Replace spaces with hyphens
         
         if (cleanName !== file) {
