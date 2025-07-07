@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import * as authController from '../controllers/authController.js';
+import { validateLogin, validateSignup } from '../validators/auth.js';
+import validateRequest from '../middleware/validateRequest.js';
+
 const router = express.Router();
-const authController = require('../controllers/authController');
-const { validateLogin, validateSignup } = require('../validators/auth');
-const validateRequest = require('../middleware/validateRequest');
 
 // Login route
 router.post('/login', validateLogin, validateRequest, authController.login);
@@ -11,12 +12,22 @@ router.post('/login', validateLogin, validateRequest, authController.login);
 router.post('/register', validateSignup, validateRequest, authController.signup);
 
 // Forgot password
-router.post('/forgot-password', authController.forgotPassword);
+// Send OTP (alias for forgot password)
+router.post('/send-otp', authController.forgotPassword);
+
+// Verify OTP
+router.post('/verify-otp', authController.verifyOTP);
 
 // Reset password
 router.patch('/reset-password/:token', authController.resetPassword);
 
+// Google login route
+router.post('/google', authController.loginWithGoogle);
+
+// Facebook login route
+router.post('/facebook', authController.loginWithFacebook);
+
 // Logout route
 router.get('/logout', authController.logout);
 
-module.exports = router;
+export default router;
