@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const returnController = require('../controllers/returnController');
-const { authenticate } = require('../middleware/auth');
+import authenticate from '../middleware/auth.js';
 
 // Mengajukan pengembalian produk
 router.post('/create', authenticate, returnController.createReturn);
